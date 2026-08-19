@@ -121,8 +121,15 @@ document.getElementById('tutorForm').addEventListener('submit', function(e) {
 });
 
 // Parent/Student Form Submit Handler
+// Parent/Student Form Submit Handler
 document.getElementById('studentForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    const selectedSubjects = getCheckedValues('studentSubject');
+    if (selectedSubjects.length === 0) {
+        alert("Please select at least one subject needed.");
+        return;
+    }
 
     const selectedSlots = getCheckedValues('studentSlot');
     if (selectedSlots.length === 0) {
@@ -150,7 +157,7 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
         parentEmail: document.getElementById('parentEmail').value,
         studentName: document.getElementById('studentName').value,
         studentGrade: document.getElementById('studentGrade').value,
-        subject: document.getElementById('studentSubject').value,
+        subjects: selectedSubjects,
         slots: selectedSlots,
         prefGender: document.getElementById('prefGender').value,
         prefGrades: preferredGrades,
@@ -159,11 +166,16 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
 
     students.push(newStudentRequest);
     saveData();
+
     alert("Parent request submitted successfully.");
     this.reset();
-    document.getElementById('studentLanguageOther').style.display = 'none';
+    
+    const otherLangInput = document.getElementById('studentLanguageOther');
+    if (otherLangInput) {
+        otherLangInput.style.display = 'none';
+        otherLangInput.removeAttribute('required');
+    }
 });
-
 function saveData() {
     localStorage.setItem('da_tutors_v3', JSON.stringify(tutors));
     localStorage.setItem('da_students_v3', JSON.stringify(students));
