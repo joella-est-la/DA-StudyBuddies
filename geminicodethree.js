@@ -213,8 +213,11 @@ function renderDashboard() {
 
     students.forEach(s => {
         const li = document.createElement('li');
-        const gradesStr = s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
-        li.innerHTML = `<strong>Child: ${s.studentName}</strong> (Grade ${s.studentGrade})<br>Parent: ${s.parentName} (${s.parentEmail})<br>Subject Needed: ${s.subject}<br>Slots: ${s.slots.join(', ')}<br>Preferences: Gender: ${s.prefGender} | ${gradesStr} | Languages: ${s.prefLanguages.join(', ')}`;
+        const gradesStr = s.prefGrades && s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
+        // Fixed: checking for s.subjects array instead of s.subject string
+        const subjectsNeeded = s.subjects ? s.subjects.join(', ') : (s.subject || "Not specified");
+        
+        li.innerHTML = `<strong>Child: ${s.studentName}</strong> (Grade ${s.studentGrade})<br>Parent: ${s.parentName} (${s.parentEmail})<br>Subjects Needed: ${subjectsNeeded}<br>Slots: ${s.slots ? s.slots.join(', ') : "None"}<br>Preferences: Gender: ${s.prefGender} | ${gradesStr} | Languages: ${s.prefLanguages.join(', ')}`;
         sList.appendChild(li);
     });
 
@@ -223,13 +226,13 @@ function renderDashboard() {
     } else {
         matches.forEach(m => {
             const li = document.createElement('li');
-            li.innerHTML = `Connected: <strong>${m.tutor}</strong> and <strong>${m.student}</strong> (Grade ${m.studentGrade})<br>Parent Contact: ${m.parentName} (${m.parentEmail})<br>Subject: ${m.subject} | Matched Slot: ${m.slot}`;
+            li.innerHTML = `Connected: <strong>${m.tutor}</strong> and <strong>${m.student}</strong> (Grade ${m.studentGrade})<br>Parent Contact: ${m.parentName} (${m.parentEmail})<br>Matched Subject: ${m.subject} | Slot: ${m.slot}`;
             mList.appendChild(li);
         });
     }
 }
 
-// Multi-Criteria Matching Algorithm with Slot & Multi-Subject Checking
+// Multi-Criteria Matching Algorithm
 function runMatchingAlgorithm() {
     let matchCount = 0;
 
@@ -238,20 +241,22 @@ function runMatchingAlgorithm() {
 
         const matchIndex = tutors.findIndex(tutor => {
             // Rule 1: Subject area overlap
-            if (!tutor.subjects.includes(student.subject)) return false;
+            const studentSubList = student.subjects || [student.subject];
+            const sharedSubject = studentSubList.find(sub => tutor.subjects && tutor.subjects.includes(sub));
+            if (!sharedSubject) return false;
 
             // Rule 2: Overlapping time slot availability
-            const sharedSlot = student.slots.find(slot => tutor.slots.includes(slot));
+            const sharedSlot = student.slots && tutor.slots ? student.slots.find(slot => tutor.slots.includes(slot)) : true;
             if (!sharedSlot) return false;
 
             // Rule 3: Gender Preference check
             if (student.prefGender !== 'No Preference' && tutor.gender !== student.prefGender) return false;
 
             // Rule 4: Grade Preference check
-            if (student.prefGrades.length > 0 && !student.prefGrades.includes(tutor.grade)) return false;
+            if (student.prefGrades && student.prefGrades.length > 0 && !student.prefGrades.includes(tutor.grade)) return false;
 
             // Rule 5: Language check
-            const tutorFluentInAll = student.prefLanguages.every(lang => tutor.languages.includes(lang));
+            const tutorFluentInAll = student.prefLanguages.every(lang => tutor.languages && tutor.languages.includes(lang));
             if (!tutorFluentInAll) return false;
 
             return true;
@@ -259,7 +264,9 @@ function runMatchingAlgorithm() {
 
         if (matchIndex !== -1) {
             const pairedTutor = tutors[matchIndex];
-            const matchedSlot = student.slots.find(slot => pairedTutor.slots.includes(slot));
+            const studentSubList = student.subjects || [student.subject];
+            const matchedSubject = studentSubList.find(sub => pairedTutor.subjects.includes(sub));
+            const matchedSlot = student.slots ? student.slots.find(slot => pairedTutor.slots.includes(slot)) : "Flexible";
 
             matches.push({
                 student: student.studentName,
@@ -268,7 +275,7 @@ function runMatchingAlgorithm() {
                 parentEmail: student.parentEmail,
                 tutor: pairedTutor.name,
                 tutorEmail: pairedTutor.email,
-                subject: student.subject,
+                subject: matchedSubject,
                 slot: matchedSlot
             });
 
