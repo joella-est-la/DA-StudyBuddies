@@ -30,7 +30,12 @@
             <div class="card wide-card">
                 <h2>Academic Standards and Program Overview</h2>
                 <p>Dakar Academy StudyBuddies connects DA families with upperclassman tutors ready to lend a hand. Whether it's tackling tricky homework or building better study habits, our goal is to match your child with a helpful DA student who can guide them through it.</p>
-                
+            <div class="card wide-card" style="margin-top: 20px;"> 
+                <h2>For Parents</h2>
+                <p>We recommend payment of 5,000 CFA per hour minimum, as well as paying after each session for a trial period of two weeks.</p>
+                <p>Students are free to have their tutoring sessions in the library after school.</p>
+                <p>After the first meeting with your tutor in the Office, we recommend getting in touch with them directly in the event of any changes in schedule.</p>
+            </div>
                 <div class="requirements-grid">
                     <div class="req-box">
                         <h3>Student Mentors</h3>
@@ -70,6 +75,7 @@
 
                     <label>Fields of Expertise (Select all you can tutor)</label>
                     <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorSubject" value="Math"> Math</label>
                         <label><input type="checkbox" name="tutorSubject" value="English"> English</label>
                         <label><input type="checkbox" name="tutorSubject" value="Science"> Science</label>
                         <label><input type="checkbox" name="tutorSubject" value="Social Studies"> Social Studies</label>
@@ -77,10 +83,26 @@
                         <label><input type="checkbox" name="tutorSubject" value="General Education"> General Education</label>
                     </div>
 
+                    <label>Days Available (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorDays" value="Monday"> Monday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Tuesday"> Tuesday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Wednesday"> Wednesday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Thursday"> Thursday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Friday"> Friday</label>
+                    </div>
+
                     <label>Time Slot Availability (Select all that work)</label>
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="tutorSlot" value="1st Slot (3:00- 4:00)"> 1st Slot (3:00PM - 4:00PM)</label>
                         <label><input type="checkbox" name="tutorSlot" value="2nd Slot (4:00 - 5:00)"> 2nd Slot (4:00 PM - 5:00 PM)</label>
+                    </div>
+
+                    <label>Age Group(s) You Would Like to Tutor</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorAgeGroup" value="Elementary"> Elementary</label>
+                        <label><input type="checkbox" name="tutorAgeGroup" value="Middle School"> Middle School</label>
+                        <label><input type="checkbox" name="tutorAgeGroup" value="High School"> High School</label>
                     </div>
 
                     <label for="tutorGender">Gender</label>
@@ -139,11 +161,21 @@
 
                     <label>Subject(s) Needed (Select all that apply)</label>
                     <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorSubject" value="Math"> Math</label>
                         <label><input type="checkbox" name="studentSubject" value="English"> English</label>
                         <label><input type="checkbox" name="studentSubject" value="Science"> Science</label>
                         <label><input type="checkbox" name="studentSubject" value="Social Studies"> Social Studies</label>
                         <label><input type="checkbox" name="studentSubject" value="General Homework"> General Homework</label>
                         <label><input type="checkbox" name="studentSubject" value="General Education"> General Education</label>
+                    </div>
+
+                    <label>Days Needed (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="studentDays" value="Monday"> Monday</label>
+                        <label><input type="checkbox" name="studentDays" value="Tuesday"> Tuesday</label>
+                        <label><input type="checkbox" name="studentDays" value="Wednesday"> Wednesday</label>
+                        <label><input type="checkbox" name="studentDays" value="Thursday"> Thursday</label>
+                        <label><input type="checkbox" name="studentDays" value="Friday"> Friday</label>
                     </div>
 
                     <label>Preferred Time Slot(s)</label>
