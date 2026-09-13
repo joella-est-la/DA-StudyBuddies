@@ -69,6 +69,8 @@ function getCheckedValues(checkboxName) {
 // Tutor Submit Handler
 document.getElementById('tutorForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    const selectedDays = getCheckedValues('tutorDays');
+    const selectedAgeGroups = getCheckedValues('tutorAgeGroup');
     const email = document.getElementById('tutorEmail').value;
     const errorSpan = document.getElementById('tutorEmailError');
 
@@ -108,6 +110,8 @@ document.getElementById('tutorForm').addEventListener('submit', function(e) {
         email: email,
         grade: parseInt(document.getElementById('tutorGrade').value),
         subjects: selectedSubjects,
+        days: selectedDays,
+        ageGroups: selectedAgeGroups,
         slots: selectedSlots,
         gender: document.getElementById('tutorGender').value,
         languages: selectedLangs
@@ -128,6 +132,11 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
     const selectedSubjects = getCheckedValues('studentSubject');
     if (selectedSubjects.length === 0) {
         alert("Please select at least one subject needed.");
+        return;
+    }
+    const selectedDays = getCheckedValues('studentDays');
+    if (selectedSubjects.length === 0) {
+        alert("Please select at least one day available.");
         return;
     }
 
@@ -158,6 +167,7 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
         studentName: document.getElementById('studentName').value,
         studentGrade: document.getElementById('studentGrade').value,
         subjects: selectedSubjects,
+        days: selectedDays,
         slots: selectedSlots,
         prefGender: document.getElementById('prefGender').value,
         prefGrades: preferredGrades,
@@ -258,6 +268,10 @@ function runMatchingAlgorithm() {
             // Rule 5: Language check
             const tutorFluentInAll = student.prefLanguages.every(lang => tutor.languages && tutor.languages.includes(lang));
             if (!tutorFluentInAll) return false;
+
+            //Rule 6: days avaiable
+            const matchingDays = student.days.filter(day => tutor.days.includes(day));
+            if (matchingDays.length === 0) return false;
 
             return true;
         });
