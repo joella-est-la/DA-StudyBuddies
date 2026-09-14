@@ -248,60 +248,69 @@ function runMatchingAlgorithm() {
 
     for (let i = students.length - 1; i >= 0; i--) {
         const student = students[i];
+        // Rank all tutors by compatibility score for this student
+        let rankedTutors = tutors.map((tutor, index) => {
+            let score = 0;
 
-        const matchIndex = tutors.findIndex(tutor => {
-            // Rule 1: Subject area overlap
-            const studentSubList = student.subjects || [student.subject];
-            const sharedSubject = studentSubList.find(sub => tutor.subjects && tutor.subjects.includes(sub));
-            if (!sharedSubject) return false;
+            // 1. Subject Match (Essential: Must share at least ONE subject)
+            const sharedSubjects = student.subjects.filter(sub => tutor.subjects.includes(sub));
+            if (sharedSubjects.length === 0) return { index, score: 0 };
+            score += sharedSubjects.length * 40; // High priority
 
-            // Rule 2: Overlapping time slot availability
-            const sharedSlot = student.slots && tutor.slots ? student.slots.find(slot => tutor.slots.includes(slot)) : true;
-            if (!sharedSlot) return false;
+            // 2. Day Availability Match (Flexible: Adds points if days overlap)
+            if (student.days && tutor.days) {
+                const sharedDays = student.days.filter(d => tutor.days.includes(d));
+                if (sharedDays.length > 0) {
+                    score += sharedDays.length * 20;
+                }
+            }
 
-            // Rule 3: Gender Preference check
-            if (student.prefGender !== 'No Preference' && tutor.gender !== student.prefGender) return false;
+            // 3. Language Match (Flexible: Adds points for ANY shared language)
+            const sharedLangs = student.prefLanguages.filter(l => tutor.languages.includes(l));
+            score += sharedLangs.length * 15;
 
-            // Rule 4: Grade Preference check
-            if (student.prefGrades && student.prefGrades.length > 0 && !student.prefGrades.includes(tutor.grade)) return false;
+            // 4. Preferred Grade Level Match
+            if (student.prefGrades.length === 0 || student.prefGrades.includes(tutor.grade)) {
+                score += 15;
+            }
 
-            // Rule 5: Language check
-            const tutorFluentInAll = student.prefLanguages.every(lang => tutor.languages && tutor.languages.includes(lang));
-            if (!tutorFluentInAll) return false;
+            // 5. Gender Preference Match
+            if (student.prefGender === 'No Preference' || tutor.gender === student.prefGender) {
+                score += 10;
+            }
 
-            //Rule 6: days avaiable
-            const matchingDays = student.days.filter(day => tutor.days.includes(day));
-            if (matchingDays.length === 0) return false;
-
-            return true;
+            return { index, score, matchedSubject: sharedSubjects[0] };
         });
 
-        if (matchIndex !== -1) {
-            const pairedTutor = tutors[matchIndex];
-            const studentSubList = student.subjects || [student.subject];
-            const matchedSubject = studentSubList.find(sub => pairedTutor.subjects.includes(sub));
-            const matchedSlot = student.slots ? student.slots.find(slot => pairedTutor.slots.includes(slot)) : "Flexible";
+        // Filter out tutors with score 0 (meaning no shared subjects)
+        rankedTutors = rankedTutors.filter(item => item.score > 0);
+
+        // Sort by highest score
+        rankedTutors.sort((a, b) => b.score - a.score);
+
+        // If a valid match exists, pair the student with the top-ranked tutor!
+        if (rankedTutors.length > 0) {
+            const bestMatch = rankedTutors[0];
+            const pairedTutor = tutors[bestMatch.index];
 
             matches.push({
-                student: student.studentName,
-                studentGrade: student.studentGrade,
-                parentName: student.parentName,
-                parentEmail: student.parentEmail,
+                student: student.name,
+                studentEmail: student.email,
                 tutor: pairedTutor.name,
                 tutorEmail: pairedTutor.email,
-                subject: matchedSubject,
-                slot: matchedSlot
+                subject: bestMatch.matchedSubject
             });
 
+            // Remove paired student and tutor from pending lists
             students.splice(i, 1);
-            tutors.splice(matchIndex, 1);
+            tutors.splice(bestMatch.index, 1);
             matchCount++;
         }
     }
 
     saveData();
     renderDashboard();
-    alert(`Matching run finished. Formed ${matchCount} connection(s).`);
+    alert(`Matching run complete! Formed ${matchCount} connection(s).`);
 }
 
 // Run initial rendering check
