@@ -124,28 +124,25 @@ document.getElementById('tutorForm').addEventListener('submit', function(e) {
     document.getElementById('tutorLanguageOther').style.display = 'none';
 });
 
-// Parent/Student Form Submit Handler
-// Parent/Student Form Submit Handler
+// Student Form Submit
 document.getElementById('studentForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    const email = document.getElementById('studentEmail').value;
+    const errorSpan = document.getElementById('studentEmailError');
+
+    if(!validateEmail(email)) {
+        errorSpan.style.display = 'block';
+        return;
+    }
+    errorSpan.style.display = 'none';
 
     const selectedSubjects = getCheckedValues('studentSubject');
     if (selectedSubjects.length === 0) {
-        alert("Please select at least one subject needed.");
+        alert("Please select at least one subject your child needs help with.");
         return;
     }
+
     const selectedDays = getCheckedValues('studentDays');
-    if (selectedSubjects.length === 0) {
-        alert("Please select at least one day available.");
-        return;
-    }
-
-    const selectedSlots = getCheckedValues('studentSlot');
-    if (selectedSlots.length === 0) {
-        alert("Please select at least one preferred time slot.");
-        return;
-    }
-
     const preferredGrades = getCheckedValues('prefGrade').map(g => parseInt(g));
 
     let requiredLangs = getCheckedValues('prefLang');
@@ -155,37 +152,24 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
         if (customLang) requiredLangs.push(customLang);
     }
 
-    if (requiredLangs.length === 0) {
-        alert("Please select at least one required language preference.");
-        return;
-    }
-
-    const newStudentRequest = {
+    const newStudent = {
         id: Date.now(),
-        parentName: document.getElementById('parentName').value,
-        parentEmail: document.getElementById('parentEmail').value,
-        studentName: document.getElementById('studentName').value,
-        studentGrade: document.getElementById('studentGrade').value,
+        name: document.getElementById('studentName').value, // Child's Name
+        email: email,                                       // Child's Email
         subjects: selectedSubjects,
         days: selectedDays,
-        slots: selectedSlots,
         prefGender: document.getElementById('prefGender').value,
         prefGrades: preferredGrades,
         prefLanguages: requiredLangs
     };
 
-    students.push(newStudentRequest);
+    students.push(newStudent);
     saveData();
-
-    alert("Parent request submitted successfully.");
+    alert("Request submitted successfully!");
     this.reset();
-    
-    const otherLangInput = document.getElementById('studentLanguageOther');
-    if (otherLangInput) {
-        otherLangInput.style.display = 'none';
-        otherLangInput.removeAttribute('required');
-    }
+    document.getElementById('studentLanguageOther').style.display = 'none';
 });
+
 function saveData() {
     localStorage.setItem('da_tutors_v3', JSON.stringify(tutors));
     localStorage.setItem('da_students_v3', JSON.stringify(students));
@@ -217,17 +201,16 @@ function renderDashboard() {
 
     tutors.forEach(t => {
         const li = document.createElement('li');
-        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Slots: ${t.slots.join(', ')}<br>Gender: ${t.gender} | Languages: ${t.languages.join(', ')}`;
+        const daysStr = t.days && t.days.length > 0 ? t.days.join(', ') : 'Not specified';
+        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Days: ${daysStr} | Languages: ${t.languages.join(', ')}`;
         tList.appendChild(li);
     });
 
     students.forEach(s => {
         const li = document.createElement('li');
-        const gradesStr = s.prefGrades && s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
-        // Fixed: checking for s.subjects array instead of s.subject string
-        const subjectsNeeded = s.subjects ? s.subjects.join(', ') : (s.subject || "Not specified");
-        
-        li.innerHTML = `<strong>Child: ${s.studentName}</strong> (Grade ${s.studentGrade})<br>Parent: ${s.parentName} (${s.parentEmail})<br>Subjects Needed: ${subjectsNeeded}<br>Slots: ${s.slots ? s.slots.join(', ') : "None"}<br>Preferences: Gender: ${s.prefGender} | ${gradesStr} | Languages: ${s.prefLanguages.join(', ')}`;
+        const daysStr = s.days && s.days.length > 0 ? s.days.join(', ') : 'Not specified';
+        const gradesStr = s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
+        li.innerHTML = `<strong>${s.name}</strong> (${s.email})<br>Needs: ${s.subjects.join(', ')}<br>Days Needed: ${daysStr}<br>Prefs: Gender: ${s.prefGender} | ${gradesStr}`;
         sList.appendChild(li);
     });
 
@@ -236,7 +219,9 @@ function renderDashboard() {
     } else {
         matches.forEach(m => {
             const li = document.createElement('li');
-            li.innerHTML = `Connected: <strong>${m.tutor}</strong> and <strong>${m.student}</strong> (Grade ${m.studentGrade})<br>Parent Contact: ${m.parentName} (${m.parentEmail})<br>Matched Subject: ${m.subject} | Slot: ${m.slot}`;
+            li.innerHTML = `Connected: <strong>${m.tutor}</strong> (Grade ${m.tutorGrade || 'N/A'}) and <strong>${m.student}</strong><br>` +
+                           `Contact: <strong>${m.studentEmail}</strong> & <strong>${m.tutorEmail}</strong><br>` +
+                           `Matched Subject: <strong>${m.subject}</strong> | Matched Day(s): <strong>${m.slot}</strong>`;
             mList.appendChild(li);
         });
     }
@@ -245,27 +230,28 @@ function renderDashboard() {
 // Multi-Criteria Matching Algorithm
 function runMatchingAlgorithm() {
     let matchCount = 0;
-
+    
     for (let i = students.length - 1; i >= 0; i--) {
         const student = students[i];
-        // Rank all tutors by compatibility score for this student
+
         let rankedTutors = tutors.map((tutor, index) => {
             let score = 0;
 
-            // 1. Subject Match (Essential: Must share at least ONE subject)
+            // 1. Subject Match
             const sharedSubjects = student.subjects.filter(sub => tutor.subjects.includes(sub));
             if (sharedSubjects.length === 0) return { index, score: 0 };
-            score += sharedSubjects.length * 40; // High priority
+            score += sharedSubjects.length * 40;
 
-            // 2. Day Availability Match (Flexible: Adds points if days overlap)
+            // 2. Day Alignment
+            let sharedDays = [];
             if (student.days && tutor.days) {
-                const sharedDays = student.days.filter(d => tutor.days.includes(d));
+                sharedDays = student.days.filter(d => tutor.days.includes(d));
                 if (sharedDays.length > 0) {
                     score += sharedDays.length * 20;
                 }
             }
 
-            // 3. Language Match (Flexible: Adds points for ANY shared language)
+            // 3. Language Match
             const sharedLangs = student.prefLanguages.filter(l => tutor.languages.includes(l));
             score += sharedLangs.length * 15;
 
@@ -279,16 +265,17 @@ function runMatchingAlgorithm() {
                 score += 10;
             }
 
-            return { index, score, matchedSubject: sharedSubjects[0] };
+            return { 
+                index, 
+                score, 
+                matchedSubject: sharedSubjects[0],
+                matchedSlot: sharedDays.length > 0 ? sharedDays.join(', ') : 'Flexible / To be agreed'
+            };
         });
 
-        // Filter out tutors with score 0 (meaning no shared subjects)
         rankedTutors = rankedTutors.filter(item => item.score > 0);
-
-        // Sort by highest score
         rankedTutors.sort((a, b) => b.score - a.score);
 
-        // If a valid match exists, pair the student with the top-ranked tutor!
         if (rankedTutors.length > 0) {
             const bestMatch = rankedTutors[0];
             const pairedTutor = tutors[bestMatch.index];
@@ -297,11 +284,12 @@ function runMatchingAlgorithm() {
                 student: student.name,
                 studentEmail: student.email,
                 tutor: pairedTutor.name,
+                tutorGrade: pairedTutor.grade,
                 tutorEmail: pairedTutor.email,
-                subject: bestMatch.matchedSubject
+                subject: bestMatch.matchedSubject,
+                slot: bestMatch.matchedSlot
             });
 
-            // Remove paired student and tutor from pending lists
             students.splice(i, 1);
             tutors.splice(bestMatch.index, 1);
             matchCount++;
@@ -310,7 +298,7 @@ function runMatchingAlgorithm() {
 
     saveData();
     renderDashboard();
-    alert(`Matching run complete! Formed ${matchCount} connection(s).`);
+    alert(`Matching complete! Formed ${matchCount} new connection(s).`);
 }
 
 // Run initial rendering check
