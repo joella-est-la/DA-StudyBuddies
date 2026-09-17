@@ -56,6 +56,10 @@ function toggleOtherLanguageText(role, isChecked) {
 function validateDAEmail(email) {
     return email.toLowerCase().endsWith('@dakar-academy.org');
 }
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+}
 
 // Helper: collect array of checked values
 function getCheckedValues(checkboxName) {
