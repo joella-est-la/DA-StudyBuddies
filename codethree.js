@@ -1,351 +1,158 @@
-// Local Database Retrieval
-let tutors = JSON.parse(localStorage.getItem('da_tutors_v3')) || [];
-let students = JSON.parse(localStorage.getItem('da_students_v3')) || [];
-let matches = JSON.parse(localStorage.getItem('da_matches_v3')) || [];
+document.addEventListener("DOMContentLoaded", () => {
+  const tutorForm = document.getElementById("tutorForm");
+  const parentForm = document.getElementById("parentForm");
+  const loginBtn = document.getElementById("loginBtn");
+  const matchBtn = document.getElementById("matchBtn");
+  const adminPanel = document.getElementById("adminPanel");
+  const adminAuth = document.getElementById("adminAuth");
 
-// Simple State Tracking for Admin Auth
-let isAdminUnlocked = false;
-
-// Navigation engine
-function switchTab(tabId) {
-    if (tabId === 'admin-dashboard' && !isAdminUnlocked) {
-        document.getElementById('admin-auth').style.display = 'block';
-        document.getElementById('admin-panel').style.display = 'none';
-    } else if (tabId === 'admin-dashboard' && isAdminUnlocked) {
-        document.getElementById('admin-auth').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'block';
-        renderDashboard();
-    }
-
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById(tabId).classList.add('active');
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
-}
-
-// Password verification gate
-function checkAdminPassword() {
-    const enteredPass = document.getElementById('adminPassword').value;
-    const errorMsg = document.getElementById('passwordError');
-
-    if (enteredPass === 'DA_admin135') {
-        isAdminUnlocked = true;
-        errorMsg.style.display = 'none';
-        document.getElementById('admin-auth').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'block';
-        renderDashboard();
-    } else {
-        errorMsg.style.display = 'block';
-    }
-}
-
-// Handle other language text input box visibility
-function toggleOtherLanguageText(role, isChecked) {
-    const otherInput = document.getElementById(`${role}LanguageOther`);
-    if (otherInput) {
-        if (isChecked) {
-            otherInput.style.display = 'block';
-            otherInput.setAttribute('required', 'true');
-        } else {
-            otherInput.style.display = 'none';
-            otherInput.removeAttribute('required');
-        }
-    }
-}
-
-// Validation Helpers
-function validateDAEmail(email) {
-    return email.toLowerCase().endsWith('@dakar-academy.org');
-}
-
-function validateEmail(email) {
-    return email.includes('@') && email.includes('.');
-}
-
-// Helper: collect array of checked values
-function getCheckedValues(checkboxName) {
-    const checked = [];
-    document.querySelectorAll(`input[name="${checkboxName}"]:checked`).forEach(chk => {
-        checked.push(chk.value);
-    });
-    return checked;
-}
-
-// Tutor Submit Handler
-document.getElementById('tutorForm').addEventListener('submit', function(e) {
+  // --- 1. SUBMIT TUTOR FORM TO FIREBASE ---
+  tutorForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const selectedDays = getCheckedValues('tutorDays');
-    const selectedAgeGroups = getCheckedValues('tutorAgeGroup');
-    const email = document.getElementById('tutorEmail').value;
-    const errorSpan = document.getElementById('tutorEmailError');
+    const name = document.getElementById("tutorName").value.trim();
+    const email = document.getElementById("tutorEmail").value.trim();
+    const subjects = document.getElementById("tutorSubjects").value.trim();
 
-    if (!validateDAEmail(email)) {
-        if (errorSpan) errorSpan.style.display = 'block';
-        return;
+    try {
+      await window.dbTools.addDoc(window.dbTools.collection(window.db, "tutors"), {
+        name,
+        email,
+        subjects,
+        createdAt: new Date()
+      });
+      alert("Tutor successfully registered!");
+      tutorForm.reset();
+    } catch (err) {
+      console.error("Error submitting tutor:", err);
+      alert("Submission failed. Check your connection.");
     }
-    if (errorSpan) errorSpan.style.display = 'none';
+  });
 
-    const selectedSubjects = getCheckedValues('tutorSubject');
-    if (selectedSubjects.length === 0) {
-        alert("Please select at least one field of expertise.");
-        return;
-    }
-
-    const selectedSlots = getCheckedValues('tutorSlot');
-    if (selectedSlots.length === 0) {
-        alert("Please select at least one time slot availability.");
-        return;
-    }
-
-    let selectedLangs = getCheckedValues('tutorLang');
-    if (selectedLangs.includes('Other')) {
-        selectedLangs = selectedLangs.filter(l => l !== 'Other');
-        const customLang = document.getElementById('tutorLanguageOther').value.trim();
-        if (customLang) selectedLangs.push(customLang);
-    }
-
-    if (selectedLangs.length === 0) {
-        alert("Please select at least one language of fluency.");
-        return;
-    }
-
-    const newTutor = {
-        id: Date.now(),
-        name: document.getElementById('tutorName').value,
-        email: email,
-        grade: parseInt(document.getElementById('tutorGrade').value),
-        subjects: selectedSubjects,
-        days: selectedDays,
-        ageGroups: selectedAgeGroups,
-        slots: selectedSlots,
-        gender: document.getElementById('tutorGender').value,
-        languages: selectedLangs
-    };
-
-    tutors.push(newTutor);
-    saveData();
-    alert("Tutor registration completed successfully.");
-    this.reset();
-    const otherLang = document.getElementById('tutorLanguageOther');
-    if (otherLang) otherLang.style.display = 'none';
-});
-
-// Student/Parent Form Submit
-document.getElementById('studentForm').addEventListener('submit', function(e) {
+  // --- 2. SUBMIT PARENT REQUEST TO FIREBASE ---
+  parentForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    
-    // Safely retrieve input elements
-    const emailInput = document.getElementById('parentEmail') || document.getElementById('studentEmail');
-    const email = emailInput ? emailInput.value.trim() : '';
-    const errorSpan = document.getElementById('studentEmailError');
+    const parentName = document.getElementById("parentName").value.trim();
+    const studentGrade = document.getElementById("studentGrade").value.trim();
+    const subjectNeeded = document.getElementById("subjectNeeded").value.trim();
 
-    if (!validateEmail(email)) {
-        if (errorSpan) errorSpan.style.display = 'block';
-        alert("Please enter a valid email address.");
-        return;
+    try {
+      await window.dbTools.addDoc(window.dbTools.collection(window.db, "students"), {
+        parentName,
+        studentGrade,
+        subjectNeeded,
+        createdAt: new Date()
+      });
+      alert("Request submitted successfully!");
+      parentForm.reset();
+    } catch (err) {
+      console.error("Error submitting request:", err);
+      alert("Submission failed. Check your connection.");
     }
-    if (errorSpan) errorSpan.style.display = 'none';
+  });
 
-    const selectedSubjects = getCheckedValues('studentSubject');
-    if (selectedSubjects.length === 0) {
-        alert("Please select at least one subject your child needs help with.");
-        return;
-    }
-
-    const selectedDays = getCheckedValues('studentDays');
-    const selectedSlots = getCheckedValues('studentSlot');
-    const preferredGrades = getCheckedValues('prefGrade').map(g => parseInt(g));
-
-    let requiredLangs = getCheckedValues('prefLang');
-    if (requiredLangs.includes('Other')) {
-        requiredLangs = requiredLangs.filter(l => l !== 'Other');
-        const customLang = document.getElementById('studentLanguageOther').value.trim();
-        if (customLang) requiredLangs.push(customLang);
-    }
-
-    const newStudent = {
-        id: Date.now(),
-        parentName: document.getElementById('parentName') ? document.getElementById('parentName').value : 'Parent',
-        studentName: document.getElementById('studentName') ? document.getElementById('studentName').value : 'Student',
-        email: email,
-        studentGrade: document.getElementById('studentGrade') ? document.getElementById('studentGrade').value : 'N/A',
-        subjects: selectedSubjects,
-        days: selectedDays,
-        slots: selectedSlots,
-        prefGender: document.getElementById('prefGender') ? document.getElementById('prefGender').value : 'No Preference',
-        prefGrades: preferredGrades,
-        prefLanguages: requiredLangs
-    };
-
-    students.push(newStudent);
-    saveData();
-    alert("Request submitted successfully!");
-    this.reset();
-    const otherLang = document.getElementById('studentLanguageOther');
-    if (otherLang) otherLang.style.display = 'none';
-});
-
-function saveData() {
-    localStorage.setItem('da_tutors_v3', JSON.stringify(tutors));
-    localStorage.setItem('da_students_v3', JSON.stringify(students));
-    localStorage.setItem('da_matches_v3', JSON.stringify(matches));
-}
-
-function clearDatabase() {
-    if (confirm("Confirm: This will delete all records of test students, tutors, and matches.")) {
-        localStorage.clear();
-        tutors = [];
-        students = [];
-        matches = [];
-        renderDashboard();
-    }
-}
-
-// Render Dashboard Screen
-function renderDashboard() {
-    document.getElementById('tutorCount').textContent = tutors.length;
-    document.getElementById('studentCount').textContent = students.length;
-
-    const tList = document.getElementById('tutorList');
-    const sList = document.getElementById('studentList');
-    const mList = document.getElementById('matchesList');
-
-    tList.innerHTML = '';
-    sList.innerHTML = '';
-    mList.innerHTML = '';
-
-    tutors.forEach(t => {
-        const li = document.createElement('li');
-        const daysStr = t.days && t.days.length > 0 ? t.days.join(', ') : 'Not specified';
-        const slotsStr = t.slots && t.slots.length > 0 ? t.slots.join(', ') : 'Flexible';
-        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Days: ${daysStr} | Slots: ${slotsStr}<br>Languages: ${t.languages.join(', ')}`;
-        tList.appendChild(li);
-    });
-
-    students.forEach(s => {
-        const li = document.createElement('li');
-        const daysStr = s.days && s.days.length > 0 ? s.days.join(', ') : 'Not specified';
-        const gradesStr = s.prefGrades && s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
-        const langsStr = s.prefLanguages && s.prefLanguages.length > 0 ? s.prefLanguages.join(', ') : "None specified";
-        
-        li.innerHTML = `<strong>${s.studentName}</strong> (Parent: ${s.parentName} - ${s.email})<br>Needs: ${s.subjects.join(', ')}<br>Days Needed: ${daysStr}<br>Prefs: Gender: ${s.prefGender} | ${gradesStr} | Languages: ${langsStr}`;
-        sList.appendChild(li);
-    });
-
-    if (matches.length === 0) {
-        mList.innerHTML = '<li>No active matches compiled.</li>';
+  // --- 3. ADMIN LOGIN ---
+  loginBtn.addEventListener("click", () => {
+    const pwd = document.getElementById("adminPassword").value;
+    if (pwd === "DA_admin135") {
+      adminAuth.classList.add("hidden");
+      adminPanel.classList.remove("hidden");
+      listenToCloudData(); // Start real-time sync across all devices!
     } else {
-        matches.forEach(m => {
-            const li = document.createElement('li');
-            li.innerHTML = `Connected: <strong>${m.tutor}</strong> (Grade ${m.tutorGrade || 'N/A'}) and <strong>${m.student}</strong><br>` +
-                           `Contact: <strong>${m.studentEmail}</strong> & <strong>${m.tutorEmail}</strong><br>` +
-                           `Matched Subject: <strong>${m.subject}</strong> | Day/Slot: <strong>${m.slot}</strong>`;
-            mList.appendChild(li);
-        });
+      alert("Incorrect admin password!");
     }
-}
+  });
 
-// Multi-Criteria Matching Algorithm
-function runMatchingAlgorithm() {
-    let matchCount = 0;
+  // --- 4. REAL-TIME CLOUD DATA LISTENER ---
+  function listenToCloudData() {
+    // Listen for Tutors
+    window.dbTools.onSnapshot(window.dbTools.collection(window.db, "tutors"), (snapshot) => {
+      const tutorsList = document.getElementById("tutorsList");
+      tutorsList.innerHTML = "";
+      if (snapshot.empty) tutorsList.innerHTML = "<p>No registered tutors.</p>";
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        tutorsList.innerHTML += `
+          <div class="list-item">
+            <strong>${data.name}</strong> (${data.email})<br/>
+            Subjects: ${data.subjects}
+          </div>`;
+      });
+    });
 
-    for (let i = students.length - 1; i >= 0; i--) {
-        const student = students[i];
+    // Listen for Parent Requests
+    window.dbTools.onSnapshot(window.dbTools.collection(window.db, "students"), (snapshot) => {
+      const requestsList = document.getElementById("requestsList");
+      requestsList.innerHTML = "";
+      if (snapshot.empty) requestsList.innerHTML = "<p>No pending requests.</p>";
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        requestsList.innerHTML += `
+          <div class="list-item">
+            <strong>Parent: ${data.parentName}</strong> (Grade: ${data.studentGrade})<br/>
+            Needs help with: ${data.subjectNeeded}
+          </div>`;
+      });
+    });
 
-        let rankedTutors = tutors.map((tutor, index) => {
-            let score = 0;
+    // Listen for Matches
+    window.dbTools.onSnapshot(window.dbTools.collection(window.db, "matches"), (snapshot) => {
+      const matchesList = document.getElementById("matchesList");
+      matchesList.innerHTML = "";
+      if (snapshot.empty) matchesList.innerHTML = "<p>No matches generated yet.</p>";
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        matchesList.innerHTML += `
+          <div class="list-item match-item">
+            🎯 <strong>Match:</strong> ${data.tutorName} ↔️ ${data.parentName} (${data.subject})
+          </div>`;
+      });
+    });
+  }
 
-            // 1. Mandatory Subject Match (Must have at least one subject in common)
-            const sharedSubjects = student.subjects.filter(sub => tutor.subjects && tutor.subjects.includes(sub));
-            if (sharedSubjects.length === 0) return { index, score: 0 };
-            score += sharedSubjects.length * 40;
+  // --- 5. AUTOMATIC MATCHING ALGORITHM ---
+  matchBtn.addEventListener("click", async () => {
+    try {
+      const tutorsSnap = await window.dbTools.getDocs(window.dbTools.collection(window.db, "tutors"));
+      const studentsSnap = await window.dbTools.getDocs(window.dbTools.collection(window.db, "students"));
 
-            // 2. Mandatory Language Requirement (Tutor MUST speak ALL languages required by parent)
-            const studentLangs = student.prefLanguages || [];
-            const speaksAllLangs = studentLangs.every(lang => tutor.languages && tutor.languages.includes(lang));
-            if (!speaksAllLangs) return { index, score: 0 };
-            score += studentLangs.length * 15;
+      let matchedCount = 0;
 
-            // 3. Mandatory Gender Preference (If specified, tutor must match)
-            if (student.prefGender && student.prefGender !== 'No Preference' && tutor.gender !== student.prefGender) {
-                return { index, score: 0 };
-            }
-            if (student.prefGender === tutor.gender) {
-                score += 10;
-            }
+      for (let studentDoc of studentsSnap.docs) {
+        const student = studentDoc.data();
+        const neededSub = student.subjectNeeded.toLowerCase();
 
-            // 4. Day Alignment
-            let sharedDays = [];
-            if (student.days && tutor.days) {
-                sharedDays = student.days.filter(d => tutor.days.includes(d));
-                score += sharedDays.length * 20;
-            }
+        for (let tutorDoc of tutorsSnap.docs) {
+          const tutor = tutorDoc.data();
+          const tutorSubs = tutor.subjects.toLowerCase();
 
-            // 5. Time Slot Alignment
-            let sharedSlots = [];
-            if (student.slots && tutor.slots) {
-                sharedSlots = student.slots.filter(s => tutor.slots.includes(s));
-                score += sharedSlots.length * 15;
-            }
-
-            // 6. Preferred Grade Level Match
-            const prefGrades = student.prefGrades || [];
-            if (prefGrades.length === 0 || prefGrades.includes(tutor.grade)) {
-                score += 15;
-            }
-
-            // Format availability details for dashboard summary
-            let matchAvailability = 'Flexible';
-            if (sharedDays.length > 0 && sharedSlots.length > 0) {
-                matchAvailability = `${sharedDays.join('/')} during ${sharedSlots.join('/')}`;
-            } else if (sharedDays.length > 0) {
-                matchAvailability = sharedDays.join('/');
-            } else if (sharedSlots.length > 0) {
-                matchAvailability = sharedSlots.join('/');
-            }
-
-            return { 
-                index, 
-                score, 
-                matchedSubject: sharedSubjects[0],
-                matchedSlot: matchAvailability
-            };
-        });
-
-        // Filter out non-matches (score === 0) and sort by highest score
-        rankedTutors = rankedTutors.filter(item => item.score > 0);
-        rankedTutors.sort((a, b) => b.score - a.score);
-
-        if (rankedTutors.length > 0) {
-            const bestMatch = rankedTutors[0];
-            const pairedTutor = tutors[bestMatch.index];
-
-            matches.push({
-                student: student.studentName || student.name,
-                studentEmail: student.email,
-                tutor: pairedTutor.name,
-                tutorGrade: pairedTutor.grade,
-                tutorEmail: pairedTutor.email,
-                subject: bestMatch.matchedSubject,
-                slot: bestMatch.matchedSlot
+          if (tutorSubs.includes(neededSub)) {
+            // Save match to cloud
+            await window.dbTools.addDoc(window.dbTools.collection(window.db, "matches"), {
+              tutorName: tutor.name,
+              tutorEmail: tutor.email,
+              parentName: student.parentName,
+              subject: student.subjectNeeded,
+              matchedAt: new Date()
             });
 
-            // Remove matched pair from pending pools
-            students.splice(i, 1);
-            tutors.splice(bestMatch.index, 1);
-            matchCount++;
+            // Delete processed entries from queue
+            await window.dbTools.deleteDoc(window.dbTools.doc(window.db, "tutors", tutorDoc.id));
+            await window.dbTools.deleteDoc(window.dbTools.doc(window.db, "students", studentDoc.id));
+
+            matchedCount++;
+            break;
+          }
         }
+      }
+
+      if (matchedCount > 0) {
+        alert(`Successfully generated ${matchedCount} match(es)!`);
+      } else {
+        alert("No subject matches found between current tutors and requests.");
+      }
+    } catch (err) {
+      console.error("Matching error:", err);
+      alert("Error running match algorithm.");
     }
-
-    saveData();
-    renderDashboard();
-    alert(`Matching complete! Formed ${matchCount} new connection(s).`);
-}
-
-// Run initial rendering check
-window.onload = function() {
-    if (isAdminUnlocked) renderDashboard();
-};
+  });
+});
