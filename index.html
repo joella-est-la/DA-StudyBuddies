@@ -1,118 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DA StudyBuddies</title>
-  <style>
-    :root {
-      --primary: #003366;
-      --secondary: #d97706;
-      --bg: #f3f4f6;
-      --card-bg: #ffffff;
-      --text: #1f2937;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 20px; }
-    header { background-color: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
-    
-    .container { max-width: 900px; margin: 0 auto; display: grid; gap: 20px; }
-    .card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    h2 { color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--bg); padding-bottom: 5px; }
-    
-    form { display: grid; gap: 10px; margin-bottom: 10px; }
-    input, select, button { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-    button { background-color: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; }
-    button:hover { opacity: 0.9; }
-    
-    .admin-btn { background-color: var(--secondary); margin-top: 10px; }
-    .hidden { display: none; }
-    .list-item { background: #eef2ff; padding: 10px; border-left: 4px solid var(--primary); margin-bottom: 8px; border-radius: 4px; }
-    .match-item { background: #ecfdf5; border-left-color: #10b981; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dakar Academy - StudyBuddies</title>
+    <link rel="stylesheet" href="looksfour.css">
 </head>
 <body>
 
-  <header>
-    <h1>DA StudyBuddies</h1>
-    <p>Connecting Student Tutors with Younger Learners at Dakar Academy</p>
-  </header>
+    <header>
+        <div class="header-brand">
+            <img src="DAlogo.jpeg" alt="Dakar Academy Crest" class="school-logo">
+            <div class="header-text">
+                <h1>Dakar Academy StudyBuddies</h1>
+                <p>Peer-to-Peer Tutoring Network</p>
+            </div>
+        </div>
+        <nav>
+            <button class="nav-btn active" onclick="switchTab('requirements')">Program Overview</button>
+            <button class="nav-btn" onclick="switchTab('tutor-signup')">Become a Tutor</button>
+            <button class="nav-btn" onclick="switchTab('student-signup')">Parent Request Form</button>
+            <button class="nav-btn" onclick="switchTab('admin-dashboard')">Admin Dashboard</button>
+        </nav>
+    </header>
 
-  <div class="container">
-    <!-- Tutor Registration Form -->
-    <div class="card">
-      <h2>Become a Tutor</h2>
-      <form id="tutorForm">
-        <input type="text" id="tutorName" placeholder="Tutor Full Name" required />
-        <input type="email" id="tutorEmail" placeholder="Dakar Academy Email (@dakar-academy.org)" required />
-        <input type="text" id="tutorSubjects" placeholder="Subjects You Can Tutor (e.g. Math, French, Science)" required />
-        <button type="submit">Register as Tutor</button>
-      </form>
-    </div>
+    <main class="container">
 
-    <!-- Parent Request Form -->
-    <div class="card">
-      <h2>Request a Tutor (Parents)</h2>
-      <form id="parentForm">
-        <input type="text" id="parentName" placeholder="Parent Full Name" required />
-        <input type="text" id="studentGrade" placeholder="Student Grade Level" required />
-        <input type="text" id="subjectNeeded" placeholder="Subject Needed" required />
-        <button type="submit">Submit Request</button>
-      </form>
-    </div>
+        <section id="requirements" class="tab-content active">
+            <div class="card wide-card">
+                <h2>Academic Standards and Program Overview</h2>
+                <p>Dakar Academy StudyBuddies connects DA families with upperclassman tutors ready to lend a hand. Whether it's tackling tricky homework or building better study habits, our goal is to match your child with a helpful DA student who can guide them through it.</p>
+            <div class="card wide-card" style="margin-top: 20px;"> 
+            </div>
+                <h2>For Parents</h2>
+                <p>We recommend payment of 5,000 CFA per hour minimum, as well as paying after each session for a trial period of two weeks.</p>
+                <p>Students are free to have their tutoring sessions in the library after school.</p>
+                <p>After the first meeting with your tutor in the Office, we recommend getting in touch with them directly in the event of any changes in schedule.</p>
+            </div>
+                <div class="requirements-grid">
+                    <div class="req-box">
+                        <h3>Student Mentors</h3>
+                        <p>Upperclassmen tutors share their knowledge across various subject areas and assist younger students during dedicated after-school slots.</p>
+                    </div>
+                    <div class="req-box">
+                        <h3>Tutor Verification</h3>
+                        <p>Student tutors must register using an official student email address ending in @dakar-academy.org.</p>
+                    </div>
+                    <div class="req-box">
+                        <h3>Integrity and Accountability</h3>
+                        <p>Tutors are expected to be punctual, respectful, and committed to helping younger learners succeed in a supportive environment.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Admin Section -->
-    <div class="card">
-      <h2>Admin Dashboard</h2>
-      <div id="adminAuth">
-        <input type="password" id="adminPassword" placeholder="Enter Admin Password" />
-        <button type="button" class="admin-btn" id="loginBtn">Log In as Admin</button>
-      </div>
+        <!-- TUTOR REGISTRATION FORM -->
+        <section id="tutor-signup" class="tab-content">
+            <div class="card">
+                <h2>Tutor Registration Form</h2>
+                <form id="tutorForm">
+                    <label for="tutorName">Full Name</label>
+                    <input type="text" id="tutorName" placeholder="John Doe" required>
 
-      <div id="adminPanel" class="hidden">
-        <button type="button" id="matchBtn" style="background-color: #10b981; margin-bottom: 15px;">Run Auto-Match Algorithm</button>
-        
-        <h3>Registered Tutors</h3>
-        <div id="tutorsList">Loading...</div>
+                    <label for="tutorEmail">School Email Address</label>
+                    <input type="email" id="tutorEmail" placeholder="username@dakar-academy.org" required>
+                    <span class="error-msg" id="tutorEmailError">Must be a valid @dakar-academy.org email.</span>
 
-        <h3 style="margin-top: 15px;">Pending Parent Requests</h3>
-        <div id="requestsList">Loading...</div>
+                    <label for="tutorGrade">Your Grade Level</label>
+                    <select id="tutorGrade">
+                        <option value="9">Grade 9</option>
+                        <option value="10">Grade 10</option>
+                        <option value="11">Grade 11</option>
+                        <option value="12">Grade 12</option>
+                    </select>
 
-        <h3 style="margin-top: 15px;">Successful Matches</h3>
-        <div id="matchesList">None yet</div>
-      </div>
-    </div>
-  </div>
+                    <label>Fields of Expertise (Select all you can tutor)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorSubject" value="Math"> Math</label>
+                        <label><input type="checkbox" name="tutorSubject" value="English"> English</label>
+                        <label><input type="checkbox" name="tutorSubject" value="Science"> Science</label>
+                        <label><input type="checkbox" name="tutorSubject" value="Social Studies"> Social Studies</label>
+                        <label><input type="checkbox" name="tutorSubject" value="General Homework"> General Homework</label>
+                        <label><input type="checkbox" name="tutorSubject" value="General Education"> General Education</label>
+                    </div>
 
-  <!-- Firebase Integration -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      addDoc, 
-      getDocs, 
-      deleteDoc, 
-      doc, 
-      onSnapshot 
+                    <label>Days Available (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorDays" value="Monday"> Monday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Tuesday"> Tuesday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Wednesday"> Wednesday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Thursday"> Thursday</label>
+                        <label><input type="checkbox" name="tutorDays" value="Friday"> Friday</label>
+                    </div>
+
+                    <label>Time Slot Availability (Select all that work)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorSlot" value="1st Slot (3:00- 4:00)"> 1st Slot (3:00PM - 4:00PM)</label>
+                        <label><input type="checkbox" name="tutorSlot" value="2nd Slot (4:00 - 5:00)"> 2nd Slot (4:00 PM - 5:00 PM)</label>
+                    </div>
+
+                    <label>Age Group(s) You Would Like to Tutor</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorAgeGroup" value="Elementary"> Elementary</label>
+                        <label><input type="checkbox" name="tutorAgeGroup" value="Middle School"> Middle School</label>
+                        <label><input type="checkbox" name="tutorAgeGroup" value="High School"> High School</label>
+                    </div>
+
+                    <label for="tutorGender">Gender</label>
+                    <select id="tutorGender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+
+                    <label>Language Fluency (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="tutorLang" value="English"> English</label>
+                        <label><input type="checkbox" name="tutorLang" value="French"> French</label>
+                        <label><input type="checkbox" name="tutorLang" value="Korean"> Korean</label>
+                        <label><input type="checkbox" name="tutorLang" value="Portuguese"> Portuguese</label>
+                        <label><input type="checkbox" name="tutorLang" value="Other" onchange="toggleOtherLanguageText('tutor', this.checked)"> Other</label>
+                    </div>
+                    <input type="text" id="tutorLanguageOther" placeholder="Specify other language" class="hidden-input">
+
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="tutorHonor" required>
+                        <label for="tutorHonor">I certify that I am prepared to tutor in my selected subject area(s).</label>
+                    </div>
+
+                    <button type="submit" class="action-btn">Submit Tutor Application</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- PARENT REQUEST FORM -->
+        <section id="student-signup" class="tab-content">
+            <div class="card">
+                <h2>Parent/Guardian Request Form</h2>
+                <p class="subtitle">Please fill out this form to request a peer tutor for your child.</p>
+                <form id="studentForm">
+                    <label for="parentName">Parent / Guardian Full Name</label>
+                    <input type="text" id="parentName" placeholder="Parent Full Name" required>
+
+                    <label for="parentEmail">Parent Email Address</label>
+                    <input type="email" id="parentEmail" placeholder="parent@example.com" required>
+
+                    <label for="studentName">Child's Full Name</label>
+                    <input type="text" id="studentName" placeholder="Child's Full Name" required>
+
+                    <label for="studentGrade">Child's Grade Level</label>
+                    <select id="studentGrade">
+                        <option value="K">Kindergarten</option>
+                        <option value="1">Grade 1</option>
+                        <option value="2">Grade 2</option>
+                        <option value="3">Grade 3</option>
+                        <option value="4">Grade 4</option>
+                        <option value="5">Grade 5</option>
+                        <option value="6">Grade 6</option>
+                        <option value="7">Grade 7</option>
+                        <option value="8">Grade 8</option>
+                    </select>
+
+                    <label>Subject(s) Needed (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="studentSubject" value="Math"> Math</label>
+                        <label><input type="checkbox" name="studentSubject" value="English"> English</label>
+                        <label><input type="checkbox" name="studentSubject" value="Science"> Science</label>
+                        <label><input type="checkbox" name="studentSubject" value="Social Studies"> Social Studies</label>
+                        <label><input type="checkbox" name="studentSubject" value="General Homework"> General Homework</label>
+                        <label><input type="checkbox" name="studentSubject" value="General Education"> General Education</label>
+                    </div>
+
+                    <label>Days Needed (Select all that apply)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="studentDays" value="Monday"> Monday</label>
+                        <label><input type="checkbox" name="studentDays" value="Tuesday"> Tuesday</label>
+                        <label><input type="checkbox" name="studentDays" value="Wednesday"> Wednesday</label>
+                        <label><input type="checkbox" name="studentDays" value="Thursday"> Thursday</label>
+                        <label><input type="checkbox" name="studentDays" value="Friday"> Friday</label>
+                    </div>
+
+                    <label>Preferred Time Slot(s)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="studentSlot" value="1st Slot (3:00 - 4:00)"> 1st Slot (3:00 PM - 4:00 PM)</label>
+                        <label><input type="checkbox" name="studentSlot" value="2nd Slot (4:00 - 5:00)"> 2nd Slot (4:00 PM - 5:00 PM)</label>
+                    </div>
+
+                    <h2>Tutor Preferences</h2>
+                    
+                    <label for="prefGender">Preferred Tutor Gender</label>
+                    <select id="prefGender">
+                        <option value="No Preference">No Preference</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+
+                    <label>Preferred Tutor Grade Levels (Select all acceptable grades)</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="prefGrade" value="9"> Grade 9</label>
+                        <label><input type="checkbox" name="prefGrade" value="10"> Grade 10</label>
+                        <label><input type="checkbox" name="prefGrade" value="11"> Grade 11</label>
+                        <label><input type="checkbox" name="prefGrade" value="12"> Grade 12</label>
+                    </div>
+
+                    <label>Required Language Fluency</label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="prefLang" value="English"> English</label>
+                        <label><input type="checkbox" name="prefLang" value="French"> French</label>
+                        <label><input type="checkbox" name="prefLang" value="Korean"> Korean</label>
+                        <label><input type="checkbox" name="prefLang" value="Portuguese"> Portuguese</label>
+                        <label><input type="checkbox" name="prefLang" value="Other" onchange="toggleOtherLanguageText('student', this.checked)"> Other</label>
+                    </div>
+                    <input type="text" id="studentLanguageOther" placeholder="Specify other language" class="hidden-input">
+
+                    <button type="submit" class="action-btn">Submit Request</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ADMIN DASHBOARD -->
+        <section id="admin-dashboard" class="tab-content">
+            <div id="admin-auth" class="card">
+                <h2>Admin Authentication Required</h2>
+                <p class="subtitle">Please enter the administrative password to access system data.</p>
+                <input type="password" id="adminPassword" placeholder="Password">
+                <button onclick="checkAdminPassword()" class="action-btn">Unlock Dashboard</button>
+                <span class="error-msg" id="passwordError">Incorrect password. Access denied.</span>
+            </div>
+
+            <div id="admin-panel" class="card wide-card" style="display: none;">
+                <h2>Admin Match Panel</h2>
+                <div class="admin-controls">
+                    <button class="match-btn" onclick="runMatchingAlgorithm()">Run Match Algorithm</button>
+                    <button class="clear-btn" onclick="clearDatabase()">Reset All Data</button>
+                </div>
+
+                <div class="dashboard-lists">
+                    <div class="list-box">
+                        <h3>Registered Tutors (<span id="tutorCount">0</span>)</h3>
+                        <ul id="tutorList"></ul>
+                    </div>
+                    <div class="list-box">
+                        <h3>Pending Parent Requests (<span id="studentCount">0</span>)</h3>
+                        <ul id="studentList"></ul>
+                    </div>
+                </div>
+
+                <div class="results-box">
+                    <h3>Successful Matches</h3>
+                    <ul id="matchesList"></ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { 
+        getFirestore, collection, addDoc, getDocs, deleteDoc, doc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+    // Your web app's Firebase configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyDYffPQM8hUumIHY5LKymgUpPt1m9pQ0I8",
-      authDomain: "da-studybuddies.firebaseapp.com",
-      projectId: "da-studybuddies",
-      storageBucket: "da-studybuddies.appspot.com",
-      messagingSenderId: "1071279818817",
-      appId: "1:1071279818817:web:2a832f91a5db4b14d245da"
+        apiKey: "AIzaSyDYffPQM8hUumIHY5LKymgUpPt1m9pQ0I8",
+        authDomain: "da-studybuddies.firebaseapp.com",
+        projectId: "da-studybuddies",
+        storageBucket: "da-studybuddies.firebasestorage.app",
+        messagingSenderId: "662577184626",
+        appId: "1:662577184626:web:8ad4eee3d21f21b68b27eb"
     };
-
+    // Connect Firebase to the global window scope for script.js
     const app = initializeApp(firebaseConfig);
     window.db = getFirestore(app);
-    window.dbTools = { collection, addDoc, getDocs, deleteDoc, doc, onSnapshot };
-  </script>
+    window.dbTools = { collection, addDoc, getDocs, deleteDoc, doc };
+</script>
+    
+<script src="codethree.js"></script>
 
-  <!-- Main Logic Script -->
-  <script src="codethree.js"></script>
 </body>
 </html>
