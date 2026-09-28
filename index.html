@@ -257,24 +257,26 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
       import { 
-        getFirestore, collection, addDoc, getDocs, deleteDoc, doc 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    // Your web app's Firebase configuration
-    const firebaseConfig = {
+        getFirestore, collection, addDoc, getDocs, deleteDoc, doc, onSnapshot 
+      } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
         apiKey: "AIzaSyDYffPQM8hUumIHY5LKymgUpPt1m9pQ0I8",
         authDomain: "da-studybuddies.firebaseapp.com",
         projectId: "da-studybuddies",
         storageBucket: "da-studybuddies.firebasestorage.app",
         messagingSenderId: "662577184626",
         appId: "1:662577184626:web:8ad4eee3d21f21b68b27eb"
-    };
-    // Connect Firebase to the global window scope for script.js
-    const app = initializeApp(firebaseConfig);
-    window.db = getFirestore(app);
-    window.dbTools = { collection, addDoc, getDocs, deleteDoc, doc };
-</script>
+      };
+
+      // Connect Firebase to the global window scope for codethree.js
+      const app = initializeApp(firebaseConfig);
+      window.db = getFirestore(app);
+      window.dbTools = { collection, addDoc, getDocs, deleteDoc, doc, onSnapshot };
+    </script>
     
-<script src="codethree.js"></script>
+    <script src="codethree.js"></script>
 
 </body>
 </html>
