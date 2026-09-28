@@ -21,7 +21,9 @@ function switchTab(tabId) {
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     
     document.getElementById(tabId).classList.add('active');
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
 }
 
 // Password verification gate
@@ -43,22 +45,24 @@ function checkAdminPassword() {
 // Handle other language text input box visibility
 function toggleOtherLanguageText(role, isChecked) {
     const otherInput = document.getElementById(`${role}LanguageOther`);
-    if (isChecked) {
-        otherInput.style.display = 'block';
-        otherInput.setAttribute('required', 'true');
-    } else {
-        otherInput.style.display = 'none';
-        otherInput.removeAttribute('required');
+    if (otherInput) {
+        if (isChecked) {
+            otherInput.style.display = 'block';
+            otherInput.setAttribute('required', 'true');
+        } else {
+            otherInput.style.display = 'none';
+            otherInput.removeAttribute('required');
+        }
     }
 }
 
-// DA Email Domain verification helper for tutors
+// Validation Helpers
 function validateDAEmail(email) {
     return email.toLowerCase().endsWith('@dakar-academy.org');
 }
+
 function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(String(email).toLowerCase());
+    return email.includes('@') && email.includes('.');
 }
 
 // Helper: collect array of checked values
@@ -78,11 +82,11 @@ document.getElementById('tutorForm').addEventListener('submit', function(e) {
     const email = document.getElementById('tutorEmail').value;
     const errorSpan = document.getElementById('tutorEmailError');
 
-    if(!validateDAEmail(email)) {
-        errorSpan.style.display = 'block';
+    if (!validateDAEmail(email)) {
+        if (errorSpan) errorSpan.style.display = 'block';
         return;
     }
-    errorSpan.style.display = 'none';
+    if (errorSpan) errorSpan.style.display = 'none';
 
     const selectedSubjects = getCheckedValues('tutorSubject');
     if (selectedSubjects.length === 0) {
@@ -125,20 +129,25 @@ document.getElementById('tutorForm').addEventListener('submit', function(e) {
     saveData();
     alert("Tutor registration completed successfully.");
     this.reset();
-    document.getElementById('tutorLanguageOther').style.display = 'none';
+    const otherLang = document.getElementById('tutorLanguageOther');
+    if (otherLang) otherLang.style.display = 'none';
 });
 
-// Student Form Submit
+// Student/Parent Form Submit
 document.getElementById('studentForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const email = document.getElementById('studentEmail').value;
+    
+    // Safely retrieve input elements
+    const emailInput = document.getElementById('parentEmail') || document.getElementById('studentEmail');
+    const email = emailInput ? emailInput.value.trim() : '';
     const errorSpan = document.getElementById('studentEmailError');
 
-    if(!validateEmail(email)) {
-        errorSpan.style.display = 'block';
+    if (!validateEmail(email)) {
+        if (errorSpan) errorSpan.style.display = 'block';
+        alert("Please enter a valid email address.");
         return;
     }
-    errorSpan.style.display = 'none';
+    if (errorSpan) errorSpan.style.display = 'none';
 
     const selectedSubjects = getCheckedValues('studentSubject');
     if (selectedSubjects.length === 0) {
@@ -147,6 +156,7 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
     }
 
     const selectedDays = getCheckedValues('studentDays');
+    const selectedSlots = getCheckedValues('studentSlot');
     const preferredGrades = getCheckedValues('prefGrade').map(g => parseInt(g));
 
     let requiredLangs = getCheckedValues('prefLang');
@@ -158,11 +168,14 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
 
     const newStudent = {
         id: Date.now(),
-        name: document.getElementById('studentName').value, // Child's Name
-        email: email,                                       // Child's Email
+        parentName: document.getElementById('parentName') ? document.getElementById('parentName').value : 'Parent',
+        studentName: document.getElementById('studentName') ? document.getElementById('studentName').value : 'Student',
+        email: email,
+        studentGrade: document.getElementById('studentGrade') ? document.getElementById('studentGrade').value : 'N/A',
         subjects: selectedSubjects,
         days: selectedDays,
-        prefGender: document.getElementById('prefGender').value,
+        slots: selectedSlots,
+        prefGender: document.getElementById('prefGender') ? document.getElementById('prefGender').value : 'No Preference',
         prefGrades: preferredGrades,
         prefLanguages: requiredLangs
     };
@@ -171,7 +184,8 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
     saveData();
     alert("Request submitted successfully!");
     this.reset();
-    document.getElementById('studentLanguageOther').style.display = 'none';
+    const otherLang = document.getElementById('studentLanguageOther');
+    if (otherLang) otherLang.style.display = 'none';
 });
 
 function saveData() {
@@ -181,7 +195,7 @@ function saveData() {
 }
 
 function clearDatabase() {
-    if(confirm("Confirm: This will delete all records of test students, tutors, and matches.")) {
+    if (confirm("Confirm: This will delete all records of test students, tutors, and matches.")) {
         localStorage.clear();
         tutors = [];
         students = [];
@@ -206,26 +220,29 @@ function renderDashboard() {
     tutors.forEach(t => {
         const li = document.createElement('li');
         const daysStr = t.days && t.days.length > 0 ? t.days.join(', ') : 'Not specified';
-        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Days: ${daysStr} | Languages: ${t.languages.join(', ')}`;
+        const slotsStr = t.slots && t.slots.length > 0 ? t.slots.join(', ') : 'Flexible';
+        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Days: ${daysStr} | Slots: ${slotsStr}<br>Languages: ${t.languages.join(', ')}`;
         tList.appendChild(li);
     });
 
     students.forEach(s => {
         const li = document.createElement('li');
         const daysStr = s.days && s.days.length > 0 ? s.days.join(', ') : 'Not specified';
-        const gradesStr = s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
-        li.innerHTML = `<strong>${s.name}</strong> (${s.email})<br>Needs: ${s.subjects.join(', ')}<br>Days Needed: ${daysStr}<br>Prefs: Gender: ${s.prefGender} | ${gradesStr}`;
+        const gradesStr = s.prefGrades && s.prefGrades.length > 0 ? `Grades: ${s.prefGrades.join(', ')}` : "No Grade Preference";
+        const langsStr = s.prefLanguages && s.prefLanguages.length > 0 ? s.prefLanguages.join(', ') : "None specified";
+        
+        li.innerHTML = `<strong>${s.studentName}</strong> (Parent: ${s.parentName} - ${s.email})<br>Needs: ${s.subjects.join(', ')}<br>Days Needed: ${daysStr}<br>Prefs: Gender: ${s.prefGender} | ${gradesStr} | Languages: ${langsStr}`;
         sList.appendChild(li);
     });
 
-    if(matches.length === 0) {
+    if (matches.length === 0) {
         mList.innerHTML = '<li>No active matches compiled.</li>';
     } else {
         matches.forEach(m => {
             const li = document.createElement('li');
             li.innerHTML = `Connected: <strong>${m.tutor}</strong> (Grade ${m.tutorGrade || 'N/A'}) and <strong>${m.student}</strong><br>` +
                            `Contact: <strong>${m.studentEmail}</strong> & <strong>${m.tutorEmail}</strong><br>` +
-                           `Matched Subject: <strong>${m.subject}</strong> | Matched Day(s): <strong>${m.slot}</strong>`;
+                           `Matched Subject: <strong>${m.subject}</strong> | Day/Slot: <strong>${m.slot}</strong>`;
             mList.appendChild(li);
         });
     }
@@ -234,49 +251,71 @@ function renderDashboard() {
 // Multi-Criteria Matching Algorithm
 function runMatchingAlgorithm() {
     let matchCount = 0;
-    
+
     for (let i = students.length - 1; i >= 0; i--) {
         const student = students[i];
 
         let rankedTutors = tutors.map((tutor, index) => {
             let score = 0;
 
-            // 1. Subject Match
-            const sharedSubjects = student.subjects.filter(sub => tutor.subjects.includes(sub));
+            // 1. Mandatory Subject Match (Must have at least one subject in common)
+            const sharedSubjects = student.subjects.filter(sub => tutor.subjects && tutor.subjects.includes(sub));
             if (sharedSubjects.length === 0) return { index, score: 0 };
             score += sharedSubjects.length * 40;
 
-            // 2. Day Alignment
+            // 2. Mandatory Language Requirement (Tutor MUST speak ALL languages required by parent)
+            const studentLangs = student.prefLanguages || [];
+            const speaksAllLangs = studentLangs.every(lang => tutor.languages && tutor.languages.includes(lang));
+            if (!speaksAllLangs) return { index, score: 0 };
+            score += studentLangs.length * 15;
+
+            // 3. Mandatory Gender Preference (If specified, tutor must match)
+            if (student.prefGender && student.prefGender !== 'No Preference' && tutor.gender !== student.prefGender) {
+                return { index, score: 0 };
+            }
+            if (student.prefGender === tutor.gender) {
+                score += 10;
+            }
+
+            // 4. Day Alignment
             let sharedDays = [];
             if (student.days && tutor.days) {
                 sharedDays = student.days.filter(d => tutor.days.includes(d));
-                if (sharedDays.length > 0) {
-                    score += sharedDays.length * 20;
-                }
+                score += sharedDays.length * 20;
             }
 
-            // 3. Language Match
-            const sharedLangs = student.prefLanguages.filter(l => tutor.languages.includes(l));
-            score += sharedLangs.length * 15;
+            // 5. Time Slot Alignment
+            let sharedSlots = [];
+            if (student.slots && tutor.slots) {
+                sharedSlots = student.slots.filter(s => tutor.slots.includes(s));
+                score += sharedSlots.length * 15;
+            }
 
-            // 4. Preferred Grade Level Match
-            if (student.prefGrades.length === 0 || student.prefGrades.includes(tutor.grade)) {
+            // 6. Preferred Grade Level Match
+            const prefGrades = student.prefGrades || [];
+            if (prefGrades.length === 0 || prefGrades.includes(tutor.grade)) {
                 score += 15;
             }
 
-            // 5. Gender Preference Match
-            if (student.prefGender === 'No Preference' || tutor.gender === student.prefGender) {
-                score += 10;
+            // Format availability details for dashboard summary
+            let matchAvailability = 'Flexible';
+            if (sharedDays.length > 0 && sharedSlots.length > 0) {
+                matchAvailability = `${sharedDays.join('/')} during ${sharedSlots.join('/')}`;
+            } else if (sharedDays.length > 0) {
+                matchAvailability = sharedDays.join('/');
+            } else if (sharedSlots.length > 0) {
+                matchAvailability = sharedSlots.join('/');
             }
 
             return { 
                 index, 
                 score, 
                 matchedSubject: sharedSubjects[0],
-                matchedSlot: sharedDays.length > 0 ? sharedDays.join(', ') : 'Flexible / To be agreed'
+                matchedSlot: matchAvailability
             };
         });
 
+        // Filter out non-matches (score === 0) and sort by highest score
         rankedTutors = rankedTutors.filter(item => item.score > 0);
         rankedTutors.sort((a, b) => b.score - a.score);
 
@@ -285,7 +324,7 @@ function runMatchingAlgorithm() {
             const pairedTutor = tutors[bestMatch.index];
 
             matches.push({
-                student: student.name,
+                student: student.studentName || student.name,
                 studentEmail: student.email,
                 tutor: pairedTutor.name,
                 tutorGrade: pairedTutor.grade,
@@ -294,6 +333,7 @@ function runMatchingAlgorithm() {
                 slot: bestMatch.matchedSlot
             });
 
+            // Remove matched pair from pending pools
             students.splice(i, 1);
             tutors.splice(bestMatch.index, 1);
             matchCount++;
