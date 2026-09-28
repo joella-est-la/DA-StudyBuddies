@@ -6,9 +6,9 @@ let matches = [];
 // Simple State Tracking for Admin Auth
 let isAdminUnlocked = false;
 
-// Real-Time Cloud Data Listener (Replaces local storage retrieval)
+// Real-Time Cloud Data Listener (Syncs across mobile and desktop)
 function initFirebaseSync() {
-    if (!window.dbTools) return;
+    if (!window.dbTools || !window.dbTools.onSnapshot) return;
 
     // Sync Tutors from Cloud
     window.dbTools.onSnapshot(window.dbTools.collection(window.db, "tutors"), (snapshot) => {
@@ -241,23 +241,27 @@ async function clearDatabase() {
 
 // Render Dashboard Screen
 function renderDashboard() {
-    document.getElementById('tutorCount').textContent = tutors.length;
-    document.getElementById('studentCount').textContent = students.length;
+    const tutorCountElem = document.getElementById('tutorCount');
+    const studentCountElem = document.getElementById('studentCount');
+    
+    if (tutorCountElem) tutorCountElem.textContent = tutors.length;
+    if (studentCountElem) studentCountElem.textContent = students.length;
 
     const tList = document.getElementById('tutorList');
     const sList = document.getElementById('studentList');
     const mList = document.getElementById('matchesList');
 
-    tList.innerHTML = '';
-    sList.innerHTML = '';
-    mList.innerHTML = '';
+    if (tList) tList.innerHTML = '';
+    if (sList) sList.innerHTML = '';
+    if (mList) mList.innerHTML = '';
 
     tutors.forEach(t => {
         const li = document.createElement('li');
         const daysStr = t.days && t.days.length > 0 ? t.days.join(', ') : 'Not specified';
         const slotsStr = t.slots && t.slots.length > 0 ? t.slots.join(', ') : 'Flexible';
-        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Days: ${daysStr} | Slots: ${slotsStr}<br>Languages: ${t.languages.join(', ')}`;
-        tList.appendChild(li);
+        const langsStr = t.languages && t.languages.length > 0 ? t.languages.join(', ') : 'None specified';
+        li.innerHTML = `<strong>${t.name}</strong> (Grade ${t.grade})<br>Subjects: ${t.subjects.join(', ')}<br>Days: ${daysStr} | Slots: ${slotsStr}<br>Languages: ${langsStr}`;
+        if (tList) tList.appendChild(li);
     });
 
     students.forEach(s => {
@@ -267,19 +271,21 @@ function renderDashboard() {
         const langsStr = s.prefLanguages && s.prefLanguages.length > 0 ? s.prefLanguages.join(', ') : "None specified";
         
         li.innerHTML = `<strong>${s.studentName}</strong> (Parent: ${s.parentName} - ${s.email})<br>Needs: ${s.subjects.join(', ')}<br>Days Needed: ${daysStr}<br>Prefs: Gender: ${s.prefGender} | ${gradesStr} | Languages: ${langsStr}`;
-        sList.appendChild(li);
+        if (sList) sList.appendChild(li);
     });
 
-    if (matches.length === 0) {
-        mList.innerHTML = '<li>No active matches compiled.</li>';
-    } else {
-        matches.forEach(m => {
-            const li = document.createElement('li');
-            li.innerHTML = `Connected: <strong>${m.tutor}</strong> (Grade ${m.tutorGrade || 'N/A'}) and <strong>${m.student}</strong><br>` +
-                           `Contact: <strong>${m.studentEmail}</strong> & <strong>${m.tutorEmail}</strong><br>` +
-                           `Matched Subject: <strong>${m.subject}</strong> | Day/Slot: <strong>${m.slot}</strong>`;
-            mList.appendChild(li);
-        });
+    if (mList) {
+        if (matches.length === 0) {
+            mList.innerHTML = '<li>No active matches compiled.</li>';
+        } else {
+            matches.forEach(m => {
+                const li = document.createElement('li');
+                li.innerHTML = `Connected: <strong>${m.tutor}</strong> (Grade ${m.tutorGrade || 'N/A'}) and <strong>${m.student}</strong><br>` +
+                               `Contact: <strong>${m.studentEmail}</strong> & <strong>${m.tutorEmail}</strong><br>` +
+                               `Matched Subject: <strong>${m.subject}</strong> | Day/Slot: <strong>${m.slot}</strong>`;
+                mList.appendChild(li);
+            });
+        }
     }
 }
 
@@ -293,18 +299,18 @@ async function runMatchingAlgorithm() {
         let rankedTutors = tutors.map((tutor, index) => {
             let score = 0;
 
-            // 1. Mandatory Subject Match (Must have at least one subject in common)
+            // 1. Mandatory Subject Match
             const sharedSubjects = student.subjects.filter(sub => tutor.subjects && tutor.subjects.includes(sub));
             if (sharedSubjects.length === 0) return { index, score: 0 };
             score += sharedSubjects.length * 40;
 
-            // 2. Mandatory Language Requirement (Tutor MUST speak ALL languages required by parent)
+            // 2. Mandatory Language Requirement
             const studentLangs = student.prefLanguages || [];
             const speaksAllLangs = studentLangs.every(lang => tutor.languages && tutor.languages.includes(lang));
             if (!speaksAllLangs) return { index, score: 0 };
             score += studentLangs.length * 15;
 
-            // 3. Mandatory Gender Preference (If specified, tutor must match)
+            // 3. Mandatory Gender Preference
             if (student.prefGender && student.prefGender !== 'No Preference' && tutor.gender !== student.prefGender) {
                 return { index, score: 0 };
             }
@@ -332,7 +338,7 @@ async function runMatchingAlgorithm() {
                 score += 15;
             }
 
-            // Format availability details for dashboard summary
+            // Format availability details
             let matchAvailability = 'Flexible';
             if (sharedDays.length > 0 && sharedSlots.length > 0) {
                 matchAvailability = `${sharedDays.join('/')} during ${sharedSlots.join('/')}`;
@@ -350,7 +356,7 @@ async function runMatchingAlgorithm() {
             };
         });
 
-        // Filter out non-matches (score === 0) and sort by highest score
+        // Filter out non-matches and sort
         rankedTutors = rankedTutors.filter(item => item.score > 0);
         rankedTutors.sort((a, b) => b.score - a.score);
 
@@ -368,7 +374,7 @@ async function runMatchingAlgorithm() {
                 slot: bestMatch.matchedSlot
             };
 
-            // Save new match to cloud
+            // Save match to cloud
             await window.dbTools.addDoc(window.dbTools.collection(window.db, "matches"), newMatch);
 
             // Remove matched entries from cloud
@@ -382,8 +388,8 @@ async function runMatchingAlgorithm() {
     alert(`Matching complete! Formed ${matchCount} new connection(s).`);
 }
 
-// Run initial Firebase initialization
-window.onload = function() {
+// Run initial Firebase initialization on page load
+window.addEventListener('load', function() {
     initFirebaseSync();
     if (isAdminUnlocked) renderDashboard();
-};
+});
