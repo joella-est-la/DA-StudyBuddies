@@ -1,10 +1,33 @@
-// Local Database Retrieval
-let tutors = JSON.parse(localStorage.getItem('da_tutors_v3')) || [];
-let students = JSON.parse(localStorage.getItem('da_students_v3')) || [];
-let matches = JSON.parse(localStorage.getItem('da_matches_v3')) || [];
+// Global memory variables (synced with Firebase Firestore)
+let tutors = [];
+let students = [];
+let matches = [];
 
 // Simple State Tracking for Admin Auth
 let isAdminUnlocked = false;
+
+// Real-Time Cloud Data Listener (Replaces local storage retrieval)
+function initFirebaseSync() {
+    if (!window.dbTools) return;
+
+    // Sync Tutors from Cloud
+    window.dbTools.onSnapshot(window.dbTools.collection(window.db, "tutors"), (snapshot) => {
+        tutors = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+        if (isAdminUnlocked) renderDashboard();
+    });
+
+    // Sync Students from Cloud
+    window.dbTools.onSnapshot(window.dbTools.collection(window.db, "students"), (snapshot) => {
+        students = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+        if (isAdminUnlocked) renderDashboard();
+    });
+
+    // Sync Matches from Cloud
+    window.dbTools.onSnapshot(window.dbTools.collection(window.db, "matches"), (snapshot) => {
+        matches = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+        if (isAdminUnlocked) renderDashboard();
+    });
+}
 
 // Navigation engine
 function switchTab(tabId) {
@@ -74,8 +97,8 @@ function getCheckedValues(checkboxName) {
     return checked;
 }
 
-// Tutor Submit Handler
-document.getElementById('tutorForm').addEventListener('submit', function(e) {
+// Tutor Submit Handler (Saves to Firebase Cloud)
+document.getElementById('tutorForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const selectedDays = getCheckedValues('tutorDays');
     const selectedAgeGroups = getCheckedValues('tutorAgeGroup');
@@ -125,16 +148,20 @@ document.getElementById('tutorForm').addEventListener('submit', function(e) {
         languages: selectedLangs
     };
 
-    tutors.push(newTutor);
-    saveData();
-    alert("Tutor registration completed successfully.");
-    this.reset();
-    const otherLang = document.getElementById('tutorLanguageOther');
-    if (otherLang) otherLang.style.display = 'none';
+    try {
+        await window.dbTools.addDoc(window.dbTools.collection(window.db, "tutors"), newTutor);
+        alert("Tutor registration completed successfully.");
+        this.reset();
+        const otherLang = document.getElementById('tutorLanguageOther');
+        if (otherLang) otherLang.style.display = 'none';
+    } catch (err) {
+        console.error("Firebase Error:", err);
+        alert("Error saving registration to cloud.");
+    }
 });
 
-// Student/Parent Form Submit
-document.getElementById('studentForm').addEventListener('submit', function(e) {
+// Student/Parent Form Submit (Saves to Firebase Cloud)
+document.getElementById('studentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     // Safely retrieve input elements
@@ -180,27 +207,35 @@ document.getElementById('studentForm').addEventListener('submit', function(e) {
         prefLanguages: requiredLangs
     };
 
-    students.push(newStudent);
-    saveData();
-    alert("Request submitted successfully!");
-    this.reset();
-    const otherLang = document.getElementById('studentLanguageOther');
-    if (otherLang) otherLang.style.display = 'none';
+    try {
+        await window.dbTools.addDoc(window.dbTools.collection(window.db, "students"), newStudent);
+        alert("Request submitted successfully!");
+        this.reset();
+        const otherLang = document.getElementById('studentLanguageOther');
+        if (otherLang) otherLang.style.display = 'none';
+    } catch (err) {
+        console.error("Firebase Error:", err);
+        alert("Error saving request to cloud.");
+    }
 });
 
-function saveData() {
-    localStorage.setItem('da_tutors_v3', JSON.stringify(tutors));
-    localStorage.setItem('da_students_v3', JSON.stringify(students));
-    localStorage.setItem('da_matches_v3', JSON.stringify(matches));
-}
-
-function clearDatabase() {
+// Clear Database from Cloud
+async function clearDatabase() {
     if (confirm("Confirm: This will delete all records of test students, tutors, and matches.")) {
-        localStorage.clear();
-        tutors = [];
-        students = [];
-        matches = [];
-        renderDashboard();
+        try {
+            const tutorsSnap = await window.dbTools.getDocs(window.dbTools.collection(window.db, "tutors"));
+            tutorsSnap.forEach(d => window.dbTools.deleteDoc(window.dbTools.doc(window.db, "tutors", d.id)));
+
+            const studentsSnap = await window.dbTools.getDocs(window.dbTools.collection(window.db, "students"));
+            studentsSnap.forEach(d => window.dbTools.deleteDoc(window.dbTools.doc(window.db, "students", d.id)));
+
+            const matchesSnap = await window.dbTools.getDocs(window.dbTools.collection(window.db, "matches"));
+            matchesSnap.forEach(d => window.dbTools.deleteDoc(window.dbTools.doc(window.db, "matches", d.id)));
+
+            renderDashboard();
+        } catch (err) {
+            console.error("Firebase Clear Error:", err);
+        }
     }
 }
 
@@ -248,8 +283,8 @@ function renderDashboard() {
     }
 }
 
-// Multi-Criteria Matching Algorithm
-function runMatchingAlgorithm() {
+// Multi-Criteria Matching Algorithm (Updates Cloud Records)
+async function runMatchingAlgorithm() {
     let matchCount = 0;
 
     for (let i = students.length - 1; i >= 0; i--) {
@@ -323,7 +358,7 @@ function runMatchingAlgorithm() {
             const bestMatch = rankedTutors[0];
             const pairedTutor = tutors[bestMatch.index];
 
-            matches.push({
+            const newMatch = {
                 student: student.studentName || student.name,
                 studentEmail: student.email,
                 tutor: pairedTutor.name,
@@ -331,21 +366,24 @@ function runMatchingAlgorithm() {
                 tutorEmail: pairedTutor.email,
                 subject: bestMatch.matchedSubject,
                 slot: bestMatch.matchedSlot
-            });
+            };
 
-            // Remove matched pair from pending pools
-            students.splice(i, 1);
-            tutors.splice(bestMatch.index, 1);
+            // Save new match to cloud
+            await window.dbTools.addDoc(window.dbTools.collection(window.db, "matches"), newMatch);
+
+            // Remove matched entries from cloud
+            if (student.docId) await window.dbTools.deleteDoc(window.dbTools.doc(window.db, "students", student.docId));
+            if (pairedTutor.docId) await window.dbTools.deleteDoc(window.dbTools.doc(window.db, "tutors", pairedTutor.docId));
+
             matchCount++;
         }
     }
 
-    saveData();
-    renderDashboard();
     alert(`Matching complete! Formed ${matchCount} new connection(s).`);
 }
 
-// Run initial rendering check
+// Run initial Firebase initialization
 window.onload = function() {
+    initFirebaseSync();
     if (isAdminUnlocked) renderDashboard();
 };
