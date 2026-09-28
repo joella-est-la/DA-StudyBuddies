@@ -31,6 +31,7 @@
                 <h2>Academic Standards and Program Overview</h2>
                 <p>Dakar Academy StudyBuddies connects DA families with upperclassman tutors ready to lend a hand. Whether it's tackling tricky homework or building better study habits, our goal is to match your child with a helpful DA student who can guide them through it.</p>
             <div class="card wide-card" style="margin-top: 20px;"> 
+            </div>
                 <h2>For Parents</h2>
                 <p>We recommend payment of 5,000 CFA per hour minimum, as well as paying after each session for a trial period of two weeks.</p>
                 <p>Students are free to have their tutoring sessions in the library after school.</p>
@@ -253,6 +254,27 @@
 
     </main>
 
-    <script src="codethree.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { 
+        getFirestore, collection, addDoc, getDocs, deleteDoc, doc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDYffPQM8hUumIHY5LKymgUpPt1m9pQ0I8",
+        authDomain: "da-studybuddies.firebaseapp.com",
+        projectId: "da-studybuddies",
+        storageBucket: "da-studybuddies.firebasestorage.app",
+        messagingSenderId: "662577184626",
+        appId: "1:662577184626:web:8ad4eee3d21f21b68b27eb"
+    };
+    // Connect Firebase to the global window scope for script.js
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.dbTools = { collection, addDoc, getDocs, deleteDoc, doc };
+</script>
+    
+<script src="codethree.js"></script>
+
 </body>
 </html>
